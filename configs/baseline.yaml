@@ -1,0 +1,26 @@
+paths:
+  test_data_dir: data/test
+  pairs_csv: pairs.csv
+  output_dir: outputs
+matcher:
+  name: sift
+  type: classical
+  detector: sift
+  ratio_test: 0.75
+  cross_check: false
+image:
+  max_width: 1600
+  max_height: 1200
+  to_gray: true
+geometry:
+  ransac_threshold: 5.0
+  min_inliers: 8
+  min_inlier_ratio: 0.1
+  max_reprojection_error: 5.0
+  max_condition_number: 20.0
+blending:
+  method: alpha
+  alpha: 0.5
+evaluation:
+  compute_ssim: true
+  compute_psnr: true

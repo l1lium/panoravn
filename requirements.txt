@@ -1,0 +1,14 @@
+# System Python (3.13) — phases 1, 2, 3, 5 and tests
+numpy
+opencv-python
+scikit-image
+pyyaml
+torch
+kornia
+pytest
+
+# venv/bin/python (Python 3.12) — phase 4 FL subprocess and ZMQ bridge
+# Install separately: venv/bin/pip install -r requirements-fl.txt
+# flwr
+# ray
+# pyzmq

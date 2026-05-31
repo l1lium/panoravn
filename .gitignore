@@ -1,0 +1,37 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Virtual environments
+venv/
+.venv/
+env/
+
+# Test cache
+.pytest_cache/
+
+# Generated outputs
+outputs/
+
+# Generated / derived data (reproduced by split_clients.py and simulation)
+data/clients/
+data/sim_frames/
+data/raw/
+
+# Model weights and checkpoints
+*.pth
+*.npz
+*.pt
+*.ckpt
+
+# Webots IDE local state
+simulation/worlds/.drone_swarm.wbproj
+
+# Machine-specific Webots controller paths
+simulation/controllers/mavic_controller/runtime.ini
+simulation/controllers/swarm_supervisor/runtime.ini
+
+# OS
+.DS_Store
+Thumbs.db

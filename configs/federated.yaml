@@ -1,0 +1,31 @@
+model:
+  name: loftr
+  checkpoint_path: null
+  confidence_threshold: 0.1
+  lora:
+    enabled: true
+    rank: 4
+    alpha: 8.0
+    target_modules:
+      - q_proj
+      - v_proj
+
+strategy:
+  type: fedavg
+  fraction_fit: 1.0
+  fraction_evaluate: 1.0
+  min_fit_clients: 2
+  min_evaluate_clients: 2
+  min_available_clients: 2
+
+server:
+  num_rounds: 10
+  num_clients: 3
+  output_dir: ./federated_output
+  server_address: 0.0.0.0:8080
+
+training:
+  local_epochs: 1
+  learning_rate: 1e-4
+  weight_decay: 1e-4
+  batch_size: 4

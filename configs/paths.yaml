@@ -1,0 +1,5 @@
+paths:
+  raw_dir: data/raw
+  client_dir: data/clients
+  test_dir: data/test
+  output_dir: outputs

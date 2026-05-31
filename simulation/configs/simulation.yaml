@@ -1,0 +1,39 @@
+simulation:
+  world_file: simulation/worlds/drone_swarm.wbt
+  num_drones: 4
+  altitude_m: 45.0          # world Z (ENU); terrain ≤12m + buildings ≤20m = ≤32m peak, 13m clearance
+  dwell_time_ms: 500         # ms to wait at each waypoint before capture
+  cruise_speed_m_s: 10.0     # drone travel speed between waypoints (m/s)
+  overlap_ratio: 0.3
+  camera_fov_deg: 84.0
+  camera_width: 1280
+  camera_height: 720
+  waypoint_tolerance_m: 1.5
+
+map:
+  x_min: -100.0   # ENU X = East  — 4 × 50m strips = 200m; col_spacing ~57m at 45m alt → 1 col/strip, 38% overlap
+  x_max:  100.0
+  y_min: -300.0   # ENU Y = North — 600m N-S coverage of the 800x800m world
+  y_max:  300.0
+
+transport:
+  mode: disk
+  zmq_endpoint: tcp://localhost:5555
+  zmq_sndhwm: 300
+  zmq_rcvhwm: 200
+  disk_frames_dir: data/sim_frames
+
+bridge:
+  min_frames_per_batch: 6
+  flush_interval_sec: 10.0
+  max_pair_distance_m: 70.0
+  max_pair_time_gap_sec: 30.0
+  use_telemetry_prior: true
+
+stitching:
+  matcher: sift
+  config_file: configs/baseline.yaml
+
+output:
+  base_dir: outputs
+  experiment_name: sim_baseline
