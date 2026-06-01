@@ -1,17 +1,3 @@
-"""
-Procedural Webots R2025a world generator for the drone swarm panorama project.
-
-World coordinate system — ENU (Webots R2025a default):
-  X: East   Y: North   Z: Up
-  Map footprint: X in [-200, 200], Y in [-200, 200]  (400 x 400 m)
-  Terrain Z origin: 0.0 m (sea level)
-
-Run:
-    python simulation/worlds/generate_world.py
-Output:
-    simulation/worlds/drone_swarm.wbt
-"""
-
 import math
 import random
 import os
@@ -62,7 +48,6 @@ def perlin2(x, y):
     )
 
 def fbm(x, y, octaves=5, persistence=0.5, lacunarity=2.0):
-    """Fractional Brownian motion (multi-octave Perlin)."""
     value, amp, freq = 0.0, 1.0, 1.0
     for _ in range(octaves):
         value += perlin2(x * freq, y * freq) * amp
@@ -71,11 +56,6 @@ def fbm(x, y, octaves=5, persistence=0.5, lacunarity=2.0):
     return value
 
 def build_heightmap():
-    """Return a flat list of GRID_N*GRID_N Z-elevation values, row-major (Y axis).
-
-    In ENU, col → X (East), row → Y (North).  Z values are the terrain elevation.
-    The two road corridors (N-S at X≈0, E-W at Y≈0) are flattened to ground level.
-    """
     heights = []
     for row in range(GRID_N):
         for col in range(GRID_N):
@@ -92,7 +72,6 @@ def build_heightmap():
     return heights
 
 def height_at(world_x, world_y, heights):
-    """Bilinear sample of the terrain Z-elevation at ENU (X, Y) world coordinates."""
     col_f = (world_x / MAP_HALF + 1.0) * 0.5 * (GRID_N - 1)
     row_f = (world_y / MAP_HALF + 1.0) * 0.5 * (GRID_N - 1)
     col_f = max(0.0, min(GRID_N - 1.001, col_f))
@@ -104,13 +83,11 @@ def height_at(world_x, world_y, heights):
                  _lerp(h(r0+1, c0), h(r0+1, c0+1), tc), tr)
 
 def rand_pos(margin=20):
-    """Return a random (X, Y) position within the map bounds."""
     x = random.uniform(-MAP_HALF + margin, MAP_HALF - margin)
     y = random.uniform(-MAP_HALF + margin, MAP_HALF - margin)
     return x, y
 
 def away_from_road(margin=20):
-    """Return a position away from both the N-S (X≈0) and E-W (Y≈0) roads."""
     road_clear = ROAD_WIDTH * 2 + margin
     while True:
         x, y = rand_pos()
@@ -205,13 +182,6 @@ def write_terrain(f, heights):
     f.write('}\n')
 
 def write_roads(f):
-    """N-S spine road (along Y axis) and E-W cross road (along X axis).
-
-    In ENU with Z-up, rotations are around the Z axis.
-    StraightRoadSegment extends along its local +X axis by default.
-      N-S road: rotate 90° around Z → extends along +Y (North).
-      E-W road: no rotation → extends along +X (East).
-    """
     seg_len = 40.0
     num_segs = int(MAP_HALF * 2 / seg_len)
     half = MAP_HALF - 10
@@ -245,12 +215,6 @@ def write_roads(f):
         f.write('}\n')
 
 def write_forests(f, heights):
-    """Scatter tree clusters across the map, away from both road corridors.
-
-    ENU translation: (X=East, Y=North, Z=terrain_elevation).
-    Rotation around Z (up) axis for random yaw.
-    SimpleTree uses the 'height' field; Pine and Oak use PROTO defaults.
-    """
     tree_protos = ['SimpleTree', 'Pine', 'Oak']
     node_counter = 0
     for cluster_idx in range(NUM_TREE_CLUSTERS):
@@ -279,11 +243,6 @@ def write_forests(f, heights):
             node_counter += 1
 
 def write_buildings(f, heights):
-    """Place houses along the N-S road corridor (X ≈ road_offset, Y varies).
-
-    ENU translation: (X=East offset from road, Y=North position, Z=terrain_elevation).
-    Rotation around Z (up) axis.
-    """
     building_protos = ['BungalowStyleHouse', 'ResidentialBuilding']
     placed = 0
     attempts = 0

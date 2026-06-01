@@ -1,18 +1,3 @@
-"""
-Webots Supervisor controller for the Mavic2Pro drone swarm.
-
-Responsibilities:
-- Load simulation config (simulation/configs/simulation.yaml).
-- Partition the map bounding box into N equal vertical strips, one per drone.
-- Compute a lawnmower (boustrophedon) waypoint grid for each strip.
-- Inject the waypoint assignment into each drone Robot node via customData.
-- Monitor customData for each drone's {"status": "DONE"} completion signal.
-- Pause the simulation when all drones finish.
-
-This controller runs inside Webots' Supervisor node and must not import from
-any other project module (core/, bridge/, models/, etc.).
-"""
-
 import json
 import math
 import os
@@ -45,7 +30,6 @@ def _load_yaml(path: str) -> dict:
         return yaml.safe_load(fh)
 
 def _resolve_config_path() -> str:
-    """Resolve simulation.yaml relative to this controller file's location."""
     controller_dir = os.path.dirname(os.path.abspath(__file__))
     return os.path.normpath(
         os.path.join(controller_dir, "..", "..", "configs", "simulation.yaml")
@@ -58,14 +42,6 @@ def _compute_lawnmower_grid(
     row_spacing: float,
     col_spacing: float,
 ) -> list[dict]:
-    """Return boustrophedon waypoints for the given rectangular strip.
-
-    ENU coordinate system: rows run along the Y (North) axis, columns along
-    X (East).  Altitude is Z (Up).  Alternating rows are traversed in reverse
-    (boustrophedon) to minimise repositioning distance.
-
-    Waypoint target format: [x_east, y_north, z_altitude]
-    """
     waypoints: list[dict] = []
     y = y_min
     row = 0
@@ -87,7 +63,6 @@ def _compute_lawnmower_grid(
     return waypoints
 
 def _build_drone_assignments(config: dict) -> list[dict]:
-    """Partition the map into N strips and return per-drone waypoint assignments."""
     sim = config["simulation"]
     map_cfg = config["map"]
 
@@ -125,10 +100,6 @@ def _build_drone_assignments(config: dict) -> list[dict]:
     return assignments
 
 def _get_terrain_height(supervisor: "Supervisor", world_x: float, world_y: float) -> float:
-    """Bilinear interpolation of ElevationGrid height at ENU (world_x, world_y).
-
-    Returns 0.0 if the TERRAIN node or its geometry cannot be resolved.
-    """
     terrain = supervisor.getFromDef("TERRAIN")
     if terrain is None:
         return 0.0
@@ -161,13 +132,6 @@ def _get_terrain_height(supervisor: "Supervisor", world_x: float, world_y: float
             h(ix1, iy1) * fx       * fy)
 
 def _inject_drones(supervisor: "Supervisor", config: dict, timestep: int) -> None:
-    """Spawn Mavic2Pro nodes into DRONE_GROUP before waypoint assignment.
-
-    Uses importMFNodeFromString to add DEF DRONE_i nodes at runtime so the
-    world file does not need to be hand-edited between runs.  One supervisor
-    step() is consumed after injection so that getFromDef() can resolve the
-    newly created DEF names on the very next call.
-    """
     map_cfg = config["map"]
     sim_cfg = config["simulation"]
     num_drones: int = sim_cfg["num_drones"]

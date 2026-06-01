@@ -1,15 +1,3 @@
-"""
-Webots per-drone controller — hardcoded lawnmower trajectory.
-
-The controller runs in Supervisor mode so it can directly set its own
-translation at each waypoint rather than fighting physics with a PID
-controller.  Motors are kept at zero; the drone is repositioned to each
-GPS target, the camera renders for a few steps, then the frame is captured.
-
-Requires the Mavic2Pro node to have `supervisor TRUE` (set by
-swarm_supervisor.py when injecting the VRML at startup).
-"""
-
 import json
 import math
 import os
@@ -68,12 +56,6 @@ def _resolve_config_path() -> str:
     )
 
 def _resolve_frames_dir(relative_path: str) -> str:
-    """Resolve a potentially relative disk_frames_dir to an absolute path.
-
-    Webots sets the controller CWD to the controller directory, so relative
-    paths in simulation.yaml would land under controllers/mavic_controller/.
-    We resolve relative to the project root (three levels up from this file).
-    """
     if os.path.isabs(relative_path):
         return relative_path
     controller_dir = os.path.dirname(os.path.abspath(__file__))

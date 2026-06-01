@@ -137,7 +137,6 @@ def run_sim_pipeline(config: dict, sim_cfg_path: str, transport: str = "zmq") ->
                 pair_idx += 1
 
             time.sleep(0.01)
-
     except KeyboardInterrupt:
         logger.info("KeyboardInterrupt — flushing remaining pairs …")
         while not frame_queue.empty():

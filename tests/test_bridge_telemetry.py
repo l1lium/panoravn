@@ -1,15 +1,3 @@
-"""
-Tests for bridge/telemetry.py
-
-Covers:
-  - ground_footprint: positive values, scales with altitude, zero at alt=0
-  - overlap_ratio:   1.0 for identical positions, 0.0 for far-apart frames,
-                     partial overlap for adjacent footprints
-  - gps_to_homography_prior: None when overlap < 0.1, 3×3 matrix otherwise,
-                              translation-only structure, correct pixel shift
-  - _haversine_m:    Paris → London regression (~341 km)
-"""
-
 import math
 import os
 import sys
@@ -40,7 +28,6 @@ def _frame(
     image_wh: tuple = _WH,
     imu_pitch: float = _NADIR,
 ) -> FrameRecord:
-    """Minimal FrameRecord for telemetry tests."""
     return FrameRecord(
         drone_id="drone_0",
         frame_id=f"test_{gps_x:.1f}_{gps_z:.1f}",
@@ -91,7 +78,6 @@ class TestGroundFootprint:
         assert w_wide > w_narrow
 
     def test_width_approx_2_alt_tan_half_fov(self):
-        """Nadir footprint width ≈ 2 * alt * tan(fov/2) (simple geometry)."""
         w, _ = ground_footprint(_ALT, _FOV, _NADIR, _WH)
         expected = 2.0 * _ALT * math.tan(math.radians(_FOV / 2))
         assert w == pytest.approx(expected, rel=0.01)
@@ -107,10 +93,6 @@ class TestOverlapRatio:
         assert overlap_ratio(a, b) == pytest.approx(1.0)
 
     def test_far_apart_returns_zero(self):
-        """
-        Frames separated by 2× the footprint width cannot overlap.
-        At alt=50 m, fov=84°: half-width ≈ 45 m, so 100 m apart → zero.
-        """
         a = _frame(0.0,   0.0)
         b = _frame(100.0, 0.0)
         assert overlap_ratio(a, b) == pytest.approx(0.0)
@@ -122,7 +104,6 @@ class TestOverlapRatio:
         assert 0.0 <= ratio <= 1.0
 
     def test_partial_overlap_decreases_with_distance(self):
-        """Frames further apart should have equal or lower overlap."""
         a    = _frame(0.0, 0.0)
         near = _frame(20.0, 0.0)
         far  = _frame(40.0, 0.0)
@@ -135,7 +116,6 @@ class TestOverlapRatio:
 
 class TestGpsToHomographyPrior:
     def test_returns_none_when_overlap_below_threshold(self):
-        """Frames 100 m apart → overlap ≈ 0 < 0.1 → must return None."""
         a = _frame(0.0,   0.0)
         b = _frame(100.0, 0.0)
         assert gps_to_homography_prior(a, b) is None
@@ -149,7 +129,6 @@ class TestGpsToHomographyPrior:
         assert H.dtype == np.float64
 
     def test_zero_displacement_yields_identity(self):
-        """Same-position frames → zero pixel displacement → identity H."""
         a = _frame(0.0, 0.0)
         b = _frame(0.0, 0.0)
         H = gps_to_homography_prior(a, b)
@@ -157,11 +136,6 @@ class TestGpsToHomographyPrior:
         np.testing.assert_allclose(H, np.eye(3), atol=1e-9)
 
     def test_homography_is_pure_translation(self):
-        """
-        The prior is built from GPS displacement only, so the returned
-        matrix must have the rotation/scale block equal to identity and
-        the perspective row equal to [0, 0, 1].
-        """
         a = _frame(0.0, 0.0)
         b = _frame(0.0, 0.0)
         H = gps_to_homography_prior(a, b)
@@ -170,10 +144,6 @@ class TestGpsToHomographyPrior:
         np.testing.assert_allclose(H[2, :], [0.0, 0.0, 1.0], atol=1e-9)
 
     def test_positive_x_displacement_produces_positive_tx(self):
-        """
-        Frame B is east of A (higher gps_x).  The pixel translation tx should
-        be positive (B is to the right of A in the image).
-        """
         a = _frame(0.0, 0.0)
         b = _frame(20.0, 0.0)
         H = gps_to_homography_prior(a, b)
@@ -187,11 +157,6 @@ class TestGpsToHomographyPrior:
 
 class TestHaversineRegression:
     def test_paris_to_london_approximately_341_km(self):
-        """
-        Great-circle distance Paris (48.8566°N, 2.3522°E) →
-        London (51.5074°N, 0.1278°W) ≈ 341 km.
-        Tolerance: ±2% (within ~7 km) to account for rounding.
-        """
         dist_m = _haversine_m(48.8566, 2.3522, 51.5074, -0.1278)
         expected_m = 341_000.0
         assert dist_m == pytest.approx(expected_m, rel=0.02), (
@@ -208,6 +173,5 @@ class TestHaversineRegression:
         assert d_ab == pytest.approx(d_ba, rel=1e-9)
 
     def test_known_equator_distance(self):
-        """1° of longitude on the equator ≈ 111,195 m (R=6,371,000 m sphere)."""
         dist = _haversine_m(0.0, 0.0, 0.0, 1.0)
         assert dist == pytest.approx(111_195.0, abs=5.0)

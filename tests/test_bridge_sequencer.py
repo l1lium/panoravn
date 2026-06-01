@@ -1,17 +1,3 @@
-"""
-Tests for bridge/sequencer.py
-
-Covers:
-  - xz_distance_m: zero for identical coords, correct Euclidean value
-  - FrameSequencer.add_frame: out-of-order insertion keeps timestamp order
-  - FrameSequencer.get_pairs: spatial distance filter (max_pair_distance_m)
-  - FrameSequencer.get_pairs: temporal gap filter (max_pair_time_gap_sec)
-  - FrameSequencer.get_pairs: min_frames_per_batch threshold
-  - FrameSequencer.get_pairs(flush=True): emits all pending pairs
-  - FrameSequencer.get_pairs(flush=True): no pair emitted twice
-  - Frame appearance constraint: each frame in at most two pairs
-"""
-
 import math
 import os
 import sys
@@ -31,7 +17,6 @@ def _rec(
     gps_y: float = 50.0,
     drone: str = "drone_0",
 ) -> FrameRecord:
-    """Create a minimal FrameRecord for sequencer tests."""
     return FrameRecord(
         drone_id=drone,
         frame_id=f"{drone}_{int(timestamp * 1_000):012d}",
@@ -49,7 +34,6 @@ def _rec(
     )
 
 def _seq(**kwargs) -> FrameSequencer:
-    """FrameSequencer with permissive defaults unless overridden."""
     defaults = dict(
         min_frames_per_batch=1,
         max_pair_distance_m=100.0,
@@ -75,14 +59,12 @@ class TestXzDistance:
         assert xz_distance_m(a, b) == pytest.approx(xz_distance_m(b, a))
 
     def test_ignores_altitude_gps_y(self):
-        """XZ distance must not consider altitude (gps_y)."""
         a = _rec(0.0, 0.0, 0.0, gps_y=10.0)
         b = _rec(1.0, 0.0, 0.0, gps_y=200.0)
         assert xz_distance_m(a, b) == pytest.approx(0.0)
 
 class TestInsertionOrdering:
     def test_out_of_order_insertion_yields_sorted_pairs(self):
-        """Frames added in reverse timestamp order must produce ascending pairs."""
         seq = _seq()
         records = [_rec(float(i), float(i) * 5, 0.0) for i in range(5, 0, -1)]
         for r in records:
@@ -94,7 +76,6 @@ class TestInsertionOrdering:
             assert a.timestamp < b.timestamp
 
     def test_interleaved_drones_sorted_by_timestamp(self):
-        """Frames from two drones interleaved by timestamp stay globally sorted."""
         seq = _seq()
         for t in range(6):
             seq.add_frame(_rec(float(t), float(t) * 3, 0.0,
@@ -196,9 +177,6 @@ class TestFlushAndNoDuplicates:
         assert second == []
 
     def test_pairs_not_duplicated_across_incremental_batches(self):
-        """
-        Add 6 frames in two batches of 3 and verify no pair is returned twice.
-        """
         seq = _seq(min_frames_per_batch=3)
         seen: set[tuple[str, str]] = set()
 
@@ -218,10 +196,6 @@ class TestFlushAndNoDuplicates:
 
 class TestFrameAppearanceConstraint:
     def test_each_frame_in_at_most_two_pairs(self):
-        """
-        Across all emitted pairs from a single get_pairs call, no frame ID
-        may appear in more than two pairs (once as left, once as right).
-        """
         seq = _seq()
         n = 10
         for i in range(n):
@@ -241,7 +215,6 @@ class TestFrameAppearanceConstraint:
             )
 
     def test_first_and_last_frames_appear_in_one_pair(self):
-        """The first frame is only a left-partner; the last only a right-partner."""
         seq = _seq()
         records = [_rec(float(i), float(i) * 5, 0.0) for i in range(5)]
         for r in records:

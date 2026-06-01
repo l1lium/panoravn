@@ -8,7 +8,6 @@ from models.model_factory import create_matcher
     reason="LoFTR requires kornia. Install separately or skip."
 )
 def test_loftr_matcher_instantiation():
-    """Test LoFTR matcher can be created from config."""
     config = {"name": "loftr", "device": "cpu"}
     matcher = create_matcher(config)
     assert matcher is not None
@@ -18,7 +17,6 @@ def test_loftr_matcher_instantiation():
     reason="LoFTR requires kornia. Install separately or skip."
 )
 def test_loftr_matcher_interface():
-    """Test LoFTR returns consistent interface."""
     image = np.zeros((200, 200), dtype=np.uint8)
     cv2.circle(image, (100, 100), 30, 255, -1)
 
@@ -38,7 +36,6 @@ def test_loftr_matcher_interface():
     reason="LoFTR requires kornia. Install separately or skip."
 )
 def test_loftr_matcher_none_input():
-    """Test LoFTR handles None input gracefully."""
     config = {"name": "loftr", "device": "cpu"}
     matcher = create_matcher(config)
     points_a, points_b, matches = matcher.match(None, None)
@@ -48,14 +45,12 @@ def test_loftr_matcher_none_input():
     assert matches == []
 
 def test_loftr_config_loading():
-    """Test LoFTR config can be loaded from file."""
     from core.io import load_config
     config = load_config("configs/loftr.yaml")
     assert config["matcher"]["name"] == "loftr"
     assert "confidence_threshold" in config["matcher"]
 
 def test_matcher_factory_supports_loftr():
-    """Test factory can create LoFTR matcher without errors."""
     config = {"name": "loftr"}
     try:
         matcher = create_matcher(config)

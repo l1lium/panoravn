@@ -9,8 +9,6 @@ from models.model_factory import create_matcher
 from core.io import load_config
 
 def test_matcher_interchangeability():
-    """Test that stitching pipeline works with different matchers through config."""
-
     test_dir = "data/test"
     assert os.path.exists(test_dir), f"{test_dir} does not exist"
 

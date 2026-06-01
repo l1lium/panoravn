@@ -6,37 +6,29 @@ from client.client_app import PanoramaMatcherClient
 from client.privacy import validate_client_payload, validate_model_parameters
 
 class TestPrivacyValidation:
-    """Test privacy validation functions."""
-
     def test_validate_model_parameters_valid(self):
-        """Test that valid numpy arrays pass validation."""
         params = [np.array([1.0, 2.0, 3.0]), np.array([[1.0, 2.0], [3.0, 4.0]])]
         validate_model_parameters(params)
 
     def test_validate_model_parameters_invalid_type(self):
-        """Test that non-numpy arrays fail validation."""
         params = [np.array([1.0, 2.0]), "not_an_array"]
         with pytest.raises(ValueError, match="must be a numpy array"):
             validate_model_parameters(params)
 
     def test_validate_client_payload_disallowed_keys(self):
-        """Test that payloads with disallowed keys are rejected."""
         payload = {"image_path": "/some/path.jpg"}
         with pytest.raises(ValueError, match="Privacy violation"):
             validate_client_payload(payload)
 
     def test_validate_client_payload_bytes(self):
-        """Test that byte payloads are rejected."""
         payload = b"raw image data"
         with pytest.raises(ValueError, match="Privacy violation"):
             validate_client_payload(payload)
 
 class TestFederatedClient:
-    """Test the federated client implementation."""
 
     @patch('client.client_app.create_matcher')
     def test_client_initialization(self, mock_create_matcher):
-        """Test client initialization."""
         mock_matcher = Mock()
         mock_create_matcher.return_value = mock_matcher
 
@@ -54,7 +46,6 @@ class TestFederatedClient:
 
     @patch('client.client_app.create_matcher')
     def test_get_parameters(self, mock_create_matcher):
-        """Test parameter extraction."""
         mock_param = Mock()
         mock_param.detach.return_value.cpu.return_value.numpy.return_value = np.array([1.0, 2.0])
 
@@ -76,7 +67,6 @@ class TestFederatedClient:
 
     @patch('client.client_app.create_matcher')
     def test_set_parameters(self, mock_create_matcher):
-        """Test parameter setting."""
         mock_param = Mock()
         mock_param.device = "cpu"
 
