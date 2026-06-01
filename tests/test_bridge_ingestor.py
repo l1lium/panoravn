@@ -1,14 +1,3 @@
-"""
-Tests for bridge/ingestor.py
-
-Covers:
-  - parse_frame_record: happy-path field extraction and RGB conversion
-  - parse_frame_record: all error branches (bad JSON, missing keys,
-    unsupported encoding, corrupt JPEG, empty payload)
-  - start_zmq_ingestor: callback count verified with a mocked zmq module
-  - start_disk_ingestor: filesystem round-trip via a temporary directory
-"""
-
 import json
 import os
 import sys
@@ -26,7 +15,6 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from bridge.ingestor import FrameRecord, parse_frame_record
 
 def _make_jpeg(width: int = 64, height: int = 48) -> bytes:
-    """Return valid JPEG bytes for a small synthetic image."""
     img = np.zeros((height, width, 3), dtype=np.uint8)
     img[height // 4 : height * 3 // 4, width // 4 : width * 3 // 4] = [100, 180, 50]
     ok, buf = cv2.imencode(".jpg", img)
@@ -34,7 +22,6 @@ def _make_jpeg(width: int = 64, height: int = 48) -> bytes:
     return buf.tobytes()
 
 def _make_meta(**overrides) -> bytes:
-    """Return a valid telemetry JSON payload (bytes), with optional field overrides."""
     base = {
         "drone_id": "drone_0",
         "frame_id": "drone_0_000001",
@@ -90,12 +77,10 @@ class TestParseFrameRecordValid:
         assert rec.image[:, :, 2].mean() > rec.image[:, :, 0].mean()
 
     def test_accepts_bytes_meta(self):
-        """parse_frame_record must accept bytes as meta_json."""
         rec = parse_frame_record(_make_jpeg(), _make_meta())
         assert rec.fov_deg == pytest.approx(84.0)
 
     def test_accepts_str_meta(self):
-        """parse_frame_record must accept str as meta_json."""
         rec = parse_frame_record(_make_jpeg(), _make_meta().decode())
         assert rec.drone_id == "drone_0"
 
@@ -127,7 +112,6 @@ class TestParseFrameRecordErrors:
             parse_frame_record(_make_jpeg(), json.dumps(meta).encode())
 
     def test_raises_on_all_required_keys_present(self):
-        """Sanity-check: correct payload should NOT raise."""
         parse_frame_record(_make_jpeg(), _make_meta())
 
     def test_raises_on_unsupported_encoding(self):
@@ -161,11 +145,6 @@ class TestParseFrameRecordErrors:
             parse_frame_record(_make_jpeg(), json.dumps(meta).encode())
 
 def _build_zmq_mock(messages: list[list[bytes]], *, stop_after_n: int = 1):
-    """
-    Return (zmq_mock, socket_mock) where the mocked PULL socket yields
-    exactly `stop_after_n` POLLIN events (each delivering one message from
-    `messages`), then returns empty poll results so the stop_event loop exits.
-    """
     zmq_real = pytest.importorskip("zmq")
 
     zmq_mock = MagicMock()
@@ -197,8 +176,6 @@ def _build_zmq_mock(messages: list[list[bytes]], *, stop_after_n: int = 1):
     return zmq_mock, socket_mock
 
 class TestZmqIngestor:
-    """Verify start_zmq_ingestor thread behaviour via a mocked zmq module."""
-
     def test_callback_called_once_for_valid_message(self):
         pytest.importorskip("zmq")
         from bridge.ingestor import start_zmq_ingestor
@@ -244,7 +221,6 @@ class TestZmqIngestor:
         assert received == []
 
     def test_wrong_part_count_discarded(self):
-        """A single-part message (not the expected 2) must be silently dropped."""
         pytest.importorskip("zmq")
         from bridge.ingestor import start_zmq_ingestor
 
@@ -266,7 +242,6 @@ class TestZmqIngestor:
         assert received == []
 
 class TestDiskIngestor:
-    """Test _scan_once logic via start_disk_ingestor and a real temp directory."""
 
     @staticmethod
     def _write_pair(drone_dir: str, stem: str, meta: bytes, jpeg: bytes) -> None:
@@ -317,7 +292,6 @@ class TestDiskIngestor:
         assert received == []
 
     def test_json_without_jpeg_not_delivered(self):
-        """Incomplete pair (JSON present but JPEG missing) must not be processed."""
         from bridge.ingestor import start_disk_ingestor
 
         with tempfile.TemporaryDirectory() as tmp:
@@ -338,7 +312,6 @@ class TestDiskIngestor:
         assert received == []
 
     def test_processed_frames_moved_to_subdirectory(self):
-        """After a successful ingest the source files must be moved to processed/."""
         from bridge.ingestor import start_disk_ingestor
 
         with tempfile.TemporaryDirectory() as tmp:
